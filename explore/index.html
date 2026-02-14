@@ -38,9 +38,10 @@
 <script>
   window.googletag = window.googletag || { cmd: [] };
   let interstitialSlot;
+  let popupAdSlot;
 
   googletag.cmd.push(() => {
-    // ✅ Define interstitial slot
+    // Define interstitial slot
     interstitialSlot = googletag.defineOutOfPageSlot(
       '/23330730517/gamzaro.com_d2',
       googletag.enums.OutOfPageFormat.INTERSTITIAL
@@ -50,24 +51,42 @@
       interstitialSlot.addService(googletag.pubads());
     }
 
+    // Define popup ad slot (shown when user clicks a game)
+    popupAdSlot = googletag.defineSlot(
+      '/23330730517/arenapro6.com_inter',
+      [[320, 480], [480, 320], [320, 50]],
+      'div-gpt-ad-1770809242636-0'
+    );
+    if (popupAdSlot) {
+      popupAdSlot.addService(googletag.pubads());
+    }
+
+    googletag.pubads().enableSingleRequest();
     googletag.enableServices();
 
-    // ✅ Preload the interstitial ad immediately after page load
+    // Preload the interstitial ad immediately after page load
     if (interstitialSlot) {
       googletag.display(interstitialSlot);
     }
   });
 
-  // ✅ Function to show interstitial and then call callback
   function showInterstitialAd(callback) {
     googletag.cmd.push(() => {
       if (interstitialSlot) {
         googletag.pubads().display(interstitialSlot);
       }
-      // ⏳ Fast fallback: max wait 500ms
       setTimeout(() => {
         if (typeof callback === 'function') callback();
       }, 500);
+    });
+  }
+
+  // Show popup ad and refresh slot (call after popup is visible)
+  function showPopupAd() {
+    googletag.cmd.push(() => {
+      if (popupAdSlot) {
+        googletag.pubads().refresh([popupAdSlot]);
+      }
     });
   }
 </script>
@@ -81,6 +100,107 @@
       div.content {
         position: fixed;
         top: 50%;
+      }
+
+      /* Ad popup overlay (like Google vignette) */
+      #ad-popup-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 99998;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        box-sizing: border-box;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.25s ease, visibility 0.25s ease;
+      }
+      #ad-popup-overlay.is-open {
+        opacity: 1;
+        visibility: visible;
+      }
+      .ad-popup-modal {
+        background: #fff;
+        border-radius: 16px;
+        max-width: 400px;
+        width: 100%;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+      }
+      .ad-popup-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px 6px;
+      }
+      .ad-popup-header .ad-label {
+        font-size: 13px;
+        color: #5f6368;
+        font-weight: 500;
+      }
+      .ad-popup-close {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: #e8eaed;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        line-height: 1;
+        color: #5f6368;
+        padding: 0;
+      }
+      .ad-popup-close:hover {
+        background: #dadce0;
+      }
+      .ad-popup-body {
+        padding: 12px 16px 16px;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ad-popup-body .adsbygoogle {
+        min-height: 50px;
+      }
+      .ad-popup-footer {
+        display: flex;
+        gap: 12px;
+        padding: 12px 16px 16px;
+        border-top: 1px solid #eee;
+      }
+      .ad-popup-footer button {
+        flex: 1;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+      }
+      .ad-popup-btn-close {
+        background: #e8eaed;
+        color: #3c4043;
+      }
+      .ad-popup-btn-close:hover {
+        background: #dadce0;
+      }
+      .ad-popup-btn-open {
+        background: #1a73e8;
+        color: #fff;
+      }
+      .ad-popup-btn-open:hover {
+        background: #1765cc;
       }
     </style>
 
@@ -554,6 +674,23 @@
 </head>
 
 <body>
+
+    <!-- Ad popup overlay (shown on game link click) -->
+    <div id="ad-popup-overlay" aria-hidden="true">
+        <div class="ad-popup-modal">
+            <div class="ad-popup-header">
+                <span class="ad-label">Ad</span>
+                <button type="button" class="ad-popup-close" title="Close" aria-label="Close">&times;</button>
+            </div>
+            <div class="ad-popup-body">
+                <div id="div-gpt-ad-1770809242636-0"></div>
+            </div>
+            <div class="ad-popup-footer">
+                <button type="button" class="ad-popup-btn-close">Close</button>
+                <button type="button" class="ad-popup-btn-open">Open</button>
+            </div>
+        </div>
+    </div>
 
     <main class="index-content">
         <section class="icon-group" id="iconGroup">
@@ -6499,6 +6636,52 @@
     </footer>
     <script type="text/javascript">
         var viewHeight = document.documentElement.clientHeight; function debounce(e, t) { var n = null; return function () { n && clearTimeout(n), n = setTimeout(e, t) } } function lazyLoadImgs() { let e = document.querySelectorAll("img[data-load]"); e.forEach(function (e) { let t = e.parentElement.getBoundingClientRect(); (0 != t.top || 0 != t.bottom || 0 != t.left || 0 != t.right || 0 != t.width || 0 != t.height || 0 != t.x || 0 != t.y) && !e.dataset.loaded && (e.onload = function () { this.style.display = "block"; let e = this.parentElement.getElementsByClassName("loading-img"); e[0] && (e[0].style.display = "none") }, t.bottom >= 0 && t.top < viewHeight && (e.setAttribute("src", e.dataset.load), e.setAttribute("data-loaded", !0))) }) } lazyLoadImgs(), document.addEventListener("scroll", debounce(lazyLoadImgs, 100)), document.addEventListener("resize", debounce(() => { viewHeight = document.documentElement.clientHeight, lazyLoadImgs() }, 200));
+    </script>
+    <script>
+      (function() {
+        var overlay = document.getElementById('ad-popup-overlay');
+        var btnClose = overlay && overlay.querySelector('.ad-popup-close');
+        var btnFooterClose = overlay && overlay.querySelector('.ad-popup-btn-close');
+        var btnOpen = overlay && overlay.querySelector('.ad-popup-btn-open');
+        var pendingHref = null;
+
+        function openPopup(href) {
+          pendingHref = href || null;
+          if (overlay) {
+            overlay.classList.add('is-open');
+            overlay.setAttribute('aria-hidden', 'false');
+            if (typeof showPopupAd === 'function') showPopupAd();
+          }
+        }
+
+        function closePopup(doNavigate) {
+          if (overlay) {
+            overlay.classList.remove('is-open');
+            overlay.setAttribute('aria-hidden', 'true');
+          }
+          if (doNavigate && pendingHref) {
+            window.location.href = pendingHref;
+          }
+          pendingHref = null;
+        }
+
+        if (btnClose) btnClose.addEventListener('click', function() { closePopup(false); });
+        if (btnFooterClose) btnFooterClose.addEventListener('click', function() { closePopup(false); });
+        if (btnOpen) btnOpen.addEventListener('click', function() { closePopup(true); });
+
+        if (overlay) {
+          overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closePopup(false);
+          });
+        }
+
+        document.addEventListener('click', function(e) {
+          var a = e.target && e.target.closest('a.game-link');
+          if (!a || !a.href) return;
+          e.preventDefault();
+          openPopup(a.getAttribute('href'));
+        }, true);
+      })();
     </script>
     <script defer
         src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015"
