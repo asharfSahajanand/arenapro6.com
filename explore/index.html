@@ -6665,13 +6665,14 @@
           pendingHref = null;
         }
 
-        if (btnClose) btnClose.addEventListener('click', function() { closePopup(false); });
-        if (btnFooterClose) btnFooterClose.addEventListener('click', function() { closePopup(false); });
+        // When user clicks any close control, close and navigate to the game link.
+        if (btnClose) btnClose.addEventListener('click', function() { closePopup(true); });
+        if (btnFooterClose) btnFooterClose.addEventListener('click', function() { closePopup(true); });
         if (btnOpen) btnOpen.addEventListener('click', function() { closePopup(true); });
 
         if (overlay) {
           overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) closePopup(false);
+            if (e.target === overlay) closePopup(false);                                                                                                                                                    
           });
         }
 
